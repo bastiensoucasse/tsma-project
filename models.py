@@ -1,21 +1,21 @@
-from keras.layers import BatchNormalization, Conv2D, Dense, Flatten, InputLayer, MaxPooling2D
+from keras.layers import BatchNormalization, Conv2D, Dense, Dropout, Flatten, InputLayer, MaxPooling2D
+from keras.applications import ResNet50
 from keras.models import Sequential
-from keras.optimizers import RMSprop
+from keras.optimizers import Adam, RMSprop
 
-MODELS = ['cnn', 'dnn']
+MODELS = ['cnn', 'dnn', 'resnet']
 
 CLASSES = {'Classical': 1, 'Electronic': 2, 'Folk': 3, 'Hip-Hop': 4, 'World Music': 5, 'Experimental': 6, 'Pop': 7, 'Rock': 8}
 NUM_CLASSES = len(CLASSES)
 
 
-def cnn(input_shape=None) -> Sequential:
+def cnn(input_shape):
     '''
     Initializes and compiles CNN.
     '''
 
     model = Sequential()
-    if input_shape is not None:
-        model.add(InputLayer(input_shape=input_shape))
+    model.add(InputLayer(input_shape=input_shape))
     model.add(Conv2D(64, 5, 1, 'same'))
     model.add(Conv2D(64, 5, 1, 'same'))
     model.add(MaxPooling2D(2, 2, 'same'))
@@ -31,14 +31,13 @@ def cnn(input_shape=None) -> Sequential:
     return model
 
 
-def dnn(input_shape=None) -> Sequential:
+def dnn(input_shape):
     '''
     Initializes and compiles DNN.
     '''
 
     model = Sequential()
-    if input_shape is not None:
-        model.add(InputLayer(input_shape=input_shape))
+    model.add(InputLayer(input_shape=input_shape))
     for _ in range(3):
         model.add(Dense(100, activation='relu'))
     model.add(Flatten())
@@ -47,7 +46,17 @@ def dnn(input_shape=None) -> Sequential:
     return model
 
 
-def load(model: str, input_shape=None) -> Sequential:
+def resnet(input_shape):
+    '''
+    Initializes and compiles ResNet.
+    '''
+
+    model = ResNet50(weights=None, input_shape=input_shape, classes=NUM_CLASSES)
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+    return model
+
+
+def load(model: str, input_shape=None):
     '''
     Initializes and compiles a model.
     '''
@@ -59,3 +68,6 @@ def load(model: str, input_shape=None) -> Sequential:
 
     if model == 'dnn':
         return dnn(input_shape=input_shape)
+
+    if model == 'resnet':
+        return resnet(input_shape=input_shape)
