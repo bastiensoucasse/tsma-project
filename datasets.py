@@ -4,10 +4,11 @@ import keras
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import openl3
 
 DATA_DIR = 'data'
 
-DATASETS = ['features', 'melspectro', 'openl3', 'vggish']
+DATASETS = ['features', 'melspectro', 'vggish', 'openl3', 'openl3_specaugment']
 
 
 def features(hot_one_encode: bool = True, split: bool = True):
@@ -92,38 +93,6 @@ def melspectro(hot_one_encode: bool = True, split: bool = True):
     return ((ids_train, x_train, y_train), (ids_val, x_val, y_val), (ids_test, x_test)) if split else ((ids_train, x_train, y_train), (ids_test, x_test))
 
 
-def openl3(hot_one_encode: bool = True, split: bool = True):
-    '''
-    Retrieves OpenL3 dataset as:
-        - (ids_train, x_train, y_train), (ids_test, x_test) if split is False.
-        - (ids_train, x_train, y_train), (ids_val, x_val, y_val), (ids_test, x_test) if split is True.
-    '''
-
-    # Load the training dataset.
-    train_dataset = pickle.load(open(f'{DATA_DIR}/openl3_train.pickle', 'rb'))
-    ids_train = np.array([x[0].replace('.mp3', '') for x in train_dataset], dtype=np.int32)
-    x_train = np.array([x[1] for x in train_dataset], dtype=np.float32)
-    x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], x_train.shape[2], 1))
-    y_train = pd.read_csv(f'{DATA_DIR}/train.csv').set_index('track_id')
-    y_train = np.array([y_train['genre_id'][x] for x in ids_train], dtype=np.int32)
-
-    # Hot-one encode the training labels.
-    if hot_one_encode:
-        y_train = keras.utils.to_categorical(y_train - 1)
-
-    # Split the training data into training and validation data.
-    if split:
-        ids_train, ids_val, x_train, x_val, y_train, y_val = train_test_split(ids_train, x_train, y_train, random_state=42)
-
-    # Load the testing data.
-    test_dataset = pickle.load(open(f'{DATA_DIR}/openl3_test.pickle', 'rb'))
-    ids_test = np.array([x[0].replace('.mp3', '') for x in test_dataset], dtype=np.int32)
-    x_test = np.array([x[1] for x in test_dataset], dtype=np.float32)
-    x_test = x_test.reshape((x_test.shape[0], x_test.shape[1], x_test.shape[2], 1))
-
-    return ((ids_train, x_train, y_train), (ids_val, x_val, y_val), (ids_test, x_test)) if split else ((ids_train, x_train, y_train), (ids_test, x_test))
-
-
 def vggish(hot_one_encode: bool = True, split: bool = True):
     '''
     Retrieves VGGish dataset as:
@@ -156,6 +125,42 @@ def vggish(hot_one_encode: bool = True, split: bool = True):
     return ((ids_train, x_train, y_train), (ids_val, x_val, y_val), (ids_test, x_test)) if split else ((ids_train, x_train, y_train), (ids_test, x_test))
 
 
+def openl3_dataset(hot_one_encode: bool = True, split: bool = True, specaugment: bool = False):
+    '''
+    Retrieves OpenL3 dataset as:
+        - (ids_train, x_train, y_train), (ids_test, x_test) if split is False.
+        - (ids_train, x_train, y_train), (ids_val, x_val, y_val), (ids_test, x_test) if split is True.
+    '''
+
+    # Load the training dataset.
+    train_dataset = pickle.load(open(f'{DATA_DIR}/openl3_train.pickle', 'rb'))
+    ids_train = np.array([x[0].replace('.mp3', '') for x in train_dataset], dtype=np.int32)
+    x_train = np.array([x[1] for x in train_dataset], dtype=np.float32)
+    x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], x_train.shape[2], 1))
+    y_train = pd.read_csv(f'{DATA_DIR}/train.csv').set_index('track_id')
+    y_train = np.array([y_train['genre_id'][x] for x in ids_train], dtype=np.int32)
+
+    # Augment the data.
+    if specaugment:
+        x_train = openl3.spec_augment(x_train)
+
+    # Hot-one encode the training labels.
+    if hot_one_encode:
+        y_train = keras.utils.to_categorical(y_train - 1)
+
+    # Split the training data into training and validation data.
+    if split:
+        ids_train, ids_val, x_train, x_val, y_train, y_val = train_test_split(ids_train, x_train, y_train, random_state=42)
+
+    # Load the testing data.
+    test_dataset = pickle.load(open(f'{DATA_DIR}/openl3_test.pickle', 'rb'))
+    ids_test = np.array([x[0].replace('.mp3', '') for x in test_dataset], dtype=np.int32)
+    x_test = np.array([x[1] for x in test_dataset], dtype=np.float32)
+    x_test = x_test.reshape((x_test.shape[0], x_test.shape[1], x_test.shape[2], 1))
+
+    return ((ids_train, x_train, y_train), (ids_val, x_val, y_val), (ids_test, x_test)) if split else ((ids_train, x_train, y_train), (ids_test, x_test))
+
+
 def load(dataset: str, hot_one_encode: bool = True, split: bool = True):
     '''
     Retrieves a dataset as:
@@ -175,7 +180,10 @@ def load(dataset: str, hot_one_encode: bool = True, split: bool = True):
         return vggish(hot_one_encode=hot_one_encode, split=split)
 
     if dataset == 'openl3':
-        return openl3(hot_one_encode=hot_one_encode, split=split)
+        return openl3_dataset(hot_one_encode=hot_one_encode, split=split, specaugment=False)
+    
+    if dataset == 'openl3_specaugment':
+        return openl3_dataset(hot_one_encode=hot_one_encode, split=split, specaugment=True)
 
 
 if __name__ == '__main__':
