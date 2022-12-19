@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
     # Train the model.
     start_time = time.time()
-    hist = model.fit(x=x_train, y=y_train, batch_size=32, epochs=EPOCHS, validation_data=(x_val, y_val))
+    hist = model.fit(x=x_train, y=y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, validation_data=(x_val, y_val))
     training_time = time.time() - start_time
 
     # Evaluate the model.
