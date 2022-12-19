@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
 import datasets
 import models
@@ -63,6 +64,11 @@ if __name__ == '__main__':
     # Print the model summary.
     print(f'Summary:\n    - Loss: {loss:.4f}\n    - Accuracy: {accuracy:.4f}\n    - Training Time: {training_time:.2f}s')
 
+    # Save and export summary.
+    Path(f'summaries/{dataset_name}/').mkdir(parents=True, exist_ok=True)
+    summary = pd.DataFrame(data=[[loss, accuracy, training_time]], columns=['Loss', 'Accuracy', 'Training Time'], dtype=str)
+    summary.to_csv(f'summaries/{dataset_name}/{dataset_name}_{model_name}_summary.csv', index=False)
+
     # Create plots folder if necessary.
     Path(f'plots/{dataset_name}/{model_name}/').mkdir(parents=True, exist_ok=True)
 
@@ -73,7 +79,7 @@ if __name__ == '__main__':
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title('Loss Over Epoch')
-    plt.savefig(f'plots/{dataset_name}/{model_name}/loss.png')
+    plt.savefig(f'plots/{dataset_name}/{model_name}/{dataset_name}_{model_name}_loss.png')
     plt.clf()
 
     # Plot the accuracy.
@@ -83,7 +89,7 @@ if __name__ == '__main__':
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
     plt.title('Accuracy Over Epoch')
-    plt.savefig(f'plots/{dataset_name}/{model_name}/accuracy.png')
+    plt.savefig(f'plots/{dataset_name}/{model_name}/{dataset_name}_{model_name}_accuracy.png')
     plt.clf()
 
     # Make the predictions.

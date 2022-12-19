@@ -41,6 +41,7 @@ def dnn(input_shape=None) -> Sequential:
         model.add(InputLayer(input_shape=input_shape))
     for _ in range(3):
         model.add(Dense(100, activation='relu'))
+    model.add(Flatten())
     model.add(Dense(NUM_CLASSES, activation='softmax'))
     model.compile(optimizer=RMSprop(learning_rate=3e-5), loss='categorical_crossentropy', metrics=['accuracy'])
     return model
