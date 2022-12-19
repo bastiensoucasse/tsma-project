@@ -4,11 +4,12 @@ from pathlib import Path
 from catboost import CatBoostClassifier
 from lightgbm import LGBMClassifier
 from xgboost import XGBClassifier
+from sklearn.svm import SVC
 
 import datasets
 import submissions
 
-MODELS = ['catboost', 'lightgbm', 'xgboost']
+MODELS = ['catboost', 'lightgbm', 'xgboost', 'svc']
 
 if __name__ == '__main__':
     # Check the usage.
@@ -52,6 +53,8 @@ if __name__ == '__main__':
         model = LGBMClassifier()
     if model_name == 'xgboost':
         model = XGBClassifier(use_label_encoder=False)
+    if model_name == 'svc':
+        model = SVC()
     print(f'Model: {model_name}.')
 
     # Train the model.
