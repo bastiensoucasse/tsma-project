@@ -66,7 +66,7 @@ def melspectro(hot_one_encode: bool = True, split: bool = True):
 
     WARNINGS:
         - ids_train is not known (temporary?).
-        - hot_one_encode must be True as the raw data is already hot_one_encoded (temporary?).
+        - hot_one_encode must be True as the raw data is already hot one encoded (temporary?).
         - Melspectro applies only for neural networks (necessarily hot one encoded, temporary?).
     '''
 
