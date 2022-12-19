@@ -1,0 +1,5 @@
+__pycache__
+.old
+.vscode
+catboost_info
+.DS_Store
