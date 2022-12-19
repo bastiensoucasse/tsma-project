@@ -4,11 +4,13 @@ import keras
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-import openl3
 
 DATA_DIR = 'data'
 
-DATASETS = ['features', 'melspectro', 'vggish', 'openl3', 'openl3_specaugment']
+DATASETS = ['features', 'melspectro', 'vggish', 'openl3']
+
+TEST_SIZE = 0.2
+RANDOM_STATE = 42
 
 
 def features(hot_one_encode: bool = True, split: bool = True):
@@ -43,7 +45,7 @@ def features(hot_one_encode: bool = True, split: bool = True):
 
     # Split the training data into training and validation data.
     if split:
-        ids_train, ids_val, x_train, x_val, y_train, y_val = train_test_split(ids_train, x_train, y_train, random_state=42)
+        ids_train, ids_val, x_train, x_val, y_train, y_val = train_test_split(ids_train, x_train, y_train, test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
     # Load the testing data.
     test_csv = pd.read_csv(filepath_or_buffer=f'{DATA_DIR}/test.csv', sep=',')
@@ -83,7 +85,7 @@ def melspectro(hot_one_encode: bool = True, split: bool = True):
 
     # Split the training data into training and validation data.
     if split:
-        ids_train, ids_val, x_train, x_val, y_train, y_val = train_test_split(ids_train, x_train, y_train, random_state=42)
+        ids_train, ids_val, x_train, x_val, y_train, y_val = train_test_split(ids_train, x_train, y_train, test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
     # Load the testing data.
     ids_test = np.array(pickle.load(open(f'{DATA_DIR}/melspectro_ids_test.pickle', 'rb')))
@@ -113,7 +115,7 @@ def vggish(hot_one_encode: bool = True, split: bool = True):
 
     # Split the training data into training and validation data.
     if split:
-        ids_train, ids_val, x_train, x_val, y_train, y_val = train_test_split(ids_train, x_train, y_train, random_state=42)
+        ids_train, ids_val, x_train, x_val, y_train, y_val = train_test_split(ids_train, x_train, y_train, test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
     # Load the testing data.
     test_dataset = pickle.load(open(f'{DATA_DIR}/vggish_test.pickle', 'rb'))
@@ -125,7 +127,7 @@ def vggish(hot_one_encode: bool = True, split: bool = True):
     return ((ids_train, x_train, y_train), (ids_val, x_val, y_val), (ids_test, x_test)) if split else ((ids_train, x_train, y_train), (ids_test, x_test))
 
 
-def openl3_dataset(hot_one_encode: bool = True, split: bool = True, specaugment: bool = False):
+def openl3_dataset(hot_one_encode: bool = True, split: bool = True):
     '''
     Retrieves OpenL3 dataset as:
         - (ids_train, x_train, y_train), (ids_test, x_test) if split is False.
@@ -140,17 +142,13 @@ def openl3_dataset(hot_one_encode: bool = True, split: bool = True, specaugment:
     y_train = pd.read_csv(f'{DATA_DIR}/train.csv').set_index('track_id')
     y_train = np.array([y_train['genre_id'][x] for x in ids_train], dtype=np.int32)
 
-    # Augment the data.
-    if specaugment:
-        x_train = openl3.spec_augment(x_train)
-
     # Hot-one encode the training labels.
     if hot_one_encode:
         y_train = keras.utils.to_categorical(y_train - 1)
 
     # Split the training data into training and validation data.
     if split:
-        ids_train, ids_val, x_train, x_val, y_train, y_val = train_test_split(ids_train, x_train, y_train, random_state=42)
+        ids_train, ids_val, x_train, x_val, y_train, y_val = train_test_split(ids_train, x_train, y_train, test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
     # Load the testing data.
     test_dataset = pickle.load(open(f'{DATA_DIR}/openl3_test.pickle', 'rb'))
@@ -180,10 +178,7 @@ def load(dataset: str, hot_one_encode: bool = True, split: bool = True):
         return vggish(hot_one_encode=hot_one_encode, split=split)
 
     if dataset == 'openl3':
-        return openl3_dataset(hot_one_encode=hot_one_encode, split=split, specaugment=False)
-    
-    if dataset == 'openl3_specaugment':
-        return openl3_dataset(hot_one_encode=hot_one_encode, split=split, specaugment=True)
+        return openl3_dataset(hot_one_encode=hot_one_encode, split=split)
 
 
 if __name__ == '__main__':

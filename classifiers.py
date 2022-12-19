@@ -3,8 +3,8 @@ from pathlib import Path
 
 from catboost import CatBoostClassifier
 from lightgbm import LGBMClassifier
-from xgboost import XGBClassifier
 from sklearn.svm import SVC
+from xgboost import XGBClassifier
 
 import datasets
 import submissions

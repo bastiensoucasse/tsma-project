@@ -1,7 +1,6 @@
-from keras.layers import BatchNormalization, Conv2D, Dense, Dropout, Flatten, InputLayer, MaxPooling2D
 from keras.applications import ResNet50
+from keras.layers import BatchNormalization, Conv2D, Dense, Flatten, InputLayer, MaxPooling2D
 from keras.models import Sequential
-from keras.optimizers import Adam, RMSprop
 
 MODELS = ['cnn', 'dnn', 'resnet']
 
@@ -38,11 +37,12 @@ def dnn(input_shape):
 
     model = Sequential()
     model.add(InputLayer(input_shape=input_shape))
-    for _ in range(3):
-        model.add(Dense(100, activation='relu'))
     model.add(Flatten())
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(32, activation='relu'))
     model.add(Dense(NUM_CLASSES, activation='softmax'))
-    model.compile(optimizer=RMSprop(learning_rate=3e-5), loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
     return model
 
 
@@ -56,7 +56,7 @@ def resnet(input_shape):
     return model
 
 
-def load(model: str, input_shape=None):
+def load(model, input_shape):
     '''
     Initializes and compiles a model.
     '''
