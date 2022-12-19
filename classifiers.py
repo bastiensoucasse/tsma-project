@@ -14,7 +14,7 @@ MODELS = ['catboost', 'lightgbm', 'xgboost', 'svc']
 if __name__ == '__main__':
     # Check the usage.
     if len(sys.argv) != 3:
-        print(f'Usage: {sys.argv[0]} <model>.')
+        print(f'Usage: {sys.argv[0]} <dataset> <model>.')
         print(f'    <dataset>: {datasets.DATASETS}.')
         print(f'    <model>: {MODELS}.')
         exit(-1)
