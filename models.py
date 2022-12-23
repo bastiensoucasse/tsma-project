@@ -1,8 +1,8 @@
-from keras.applications import ResNet50
-from keras.layers import BatchNormalization, Conv2D, Dense, Flatten, InputLayer, MaxPooling2D
+from keras.layers import BatchNormalization, Conv2D, Dense, Dropout, Flatten, InputLayer, LSTM, MaxPooling2D
 from keras.models import Sequential
+from keras.optimizers import Adam
 
-MODELS = ['cnn', 'dnn', 'resnet']
+MODELS = ['cnn', 'dnn', 'rnn']
 
 CLASSES = {'Classical': 1, 'Electronic': 2, 'Folk': 3, 'Hip-Hop': 4, 'World Music': 5, 'Experimental': 6, 'Pop': 7, 'Rock': 8}
 NUM_CLASSES = len(CLASSES)
@@ -15,18 +15,41 @@ def cnn(input_shape):
 
     model = Sequential()
     model.add(InputLayer(input_shape=input_shape))
-    model.add(Conv2D(64, 5, 1, 'same'))
-    model.add(Conv2D(64, 5, 1, 'same'))
-    model.add(MaxPooling2D(2, 2, 'same'))
+
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same'))
     model.add(BatchNormalization())
-    model.add(Conv2D(128, 5, 1, 'same'))
-    model.add(Conv2D(128, 5, 1, 'same'))
-    model.add(MaxPooling2D(2, 2, 'same'))
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same'))
     model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
     model.add(Flatten())
-    model.add(Dense(128, activation='relu'))
+    model.add(Dense(512, activation='relu'))
+    model.add(Dense(512, activation='relu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.5))
+    model.add(Dense(256, activation='relu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.5))
     model.add(Dense(NUM_CLASSES, activation='softmax'))
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+
+    optimizer = Adam(learning_rate=1e-4)
+    model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
     return model
 
 
@@ -37,22 +60,56 @@ def dnn(input_shape):
 
     model = Sequential()
     model.add(InputLayer(input_shape=input_shape))
+
     model.add(Flatten())
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(32, activation='relu'))
+    model.add(Dense(512, activation='relu'))
+    model.add(Dense(512, activation='relu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.5))
+    model.add(Dense(256, activation='relu'))
+    model.add(Dense(256, activation='relu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.5))
     model.add(Dense(NUM_CLASSES, activation='softmax'))
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+    optimizer = Adam(learning_rate=1e-4)
+    model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
     return model
 
 
-def resnet(input_shape):
+def classifier(input_shape):
     '''
-    Initializes and compiles ResNet.
+    Initializes and compiles a classifier.
     '''
 
-    model = ResNet50(weights=None, input_shape=input_shape, classes=NUM_CLASSES)
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+    model = Sequential()
+    model.add(InputLayer(input_shape=input_shape))
+
+    model.add(Flatten())
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(NUM_CLASSES, activation='softmax'))
+
+    optimizer = Adam(learning_rate=1e-3)
+    model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+    return model
+
+
+def rnn(input_shape):
+    '''
+    Initializes and compiles RNN.
+    '''
+
+    model = Sequential()
+    model.add(LSTM(64, input_shape=input_shape))
+    model.add(Dense(NUM_CLASSES, activation='softmax'))
+
+    optimizer = Adam(learning_rate=1e-4)
+    model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
     return model
 
 
@@ -69,5 +126,5 @@ def load(model, input_shape):
     if model == 'dnn':
         return dnn(input_shape=input_shape)
 
-    if model == 'resnet':
-        return resnet(input_shape=input_shape)
+    if model == 'rnn':
+        return rnn(input_shape=input_shape)

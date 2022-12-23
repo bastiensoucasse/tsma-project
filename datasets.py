@@ -13,6 +13,31 @@ TEST_SIZE = 0.2
 RANDOM_STATE = 42
 
 
+def opt():
+    (vggish_ids_train, vggish_x_train, vggish_y_train), (vggish_ids_test, vggish_x_test) = vggish(hot_one_encode=False, split=False)
+    (_, openl3_x_train, _), (openl3_ids_test, openl3_x_test) = openl3(hot_one_encode=False, split=False)
+
+    vggish_x_train = vggish_x_train.reshape((vggish_x_train.shape[0], -1))
+    openl3_x_train = openl3_x_train.reshape((openl3_x_train.shape[0], -1))
+    vggish_x_test = vggish_x_test.reshape((vggish_x_test.shape[0], -1))
+    openl3_x_test = openl3_x_test.reshape((openl3_x_test.shape[0], -1))
+
+    for i in range(vggish_ids_test.size):
+        if vggish_ids_test[i] not in openl3_ids_test:
+            vggish_ids_test = np.delete(vggish_ids_test, i)
+            vggish_x_test = np.delete(vggish_x_test, i, axis=0)
+            break
+
+    ids_train = vggish_ids_train
+    x_train = np.concatenate((vggish_x_train, openl3_x_train), axis=1)
+    y_train = vggish_y_train
+
+    ids_test = vggish_ids_test
+    x_test = np.concatenate((vggish_x_test, openl3_x_test), axis=1)
+
+    return (ids_train, x_train, y_train), (ids_test, x_test)
+
+
 def features(hot_one_encode: bool = True, split: bool = True):
     '''
     Retrieves Features dataset as:
@@ -127,7 +152,7 @@ def vggish(hot_one_encode: bool = True, split: bool = True):
     return ((ids_train, x_train, y_train), (ids_val, x_val, y_val), (ids_test, x_test)) if split else ((ids_train, x_train, y_train), (ids_test, x_test))
 
 
-def openl3_dataset(hot_one_encode: bool = True, split: bool = True):
+def openl3(hot_one_encode: bool = True, split: bool = True):
     '''
     Retrieves OpenL3 dataset as:
         - (ids_train, x_train, y_train), (ids_test, x_test) if split is False.
@@ -178,7 +203,7 @@ def load(dataset: str, hot_one_encode: bool = True, split: bool = True):
         return vggish(hot_one_encode=hot_one_encode, split=split)
 
     if dataset == 'openl3':
-        return openl3_dataset(hot_one_encode=hot_one_encode, split=split)
+        return openl3(hot_one_encode=hot_one_encode, split=split)
 
 
 if __name__ == '__main__':

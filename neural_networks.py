@@ -1,20 +1,31 @@
+import os
 import sys
 import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import tensorflow as tf
+from keras.callbacks import EarlyStopping
 from keras.preprocessing.image import ImageDataGenerator
 
 import datasets
 import models
 import submissions
+import spec_augment
 
-EPOCHS = 20
-BATCH_SIZE = 32
+EPOCHS = 100
+BATCH_SIZE = 16
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+os.environ['TF_GPU_ALLOCATOR'] = 'cuda_malloc_async'
+
+gpu_devices = tf.config.experimental.list_physical_devices('GPU')
+for device in gpu_devices:
+    tf.config.experimental.set_memory_growth(device, True)
 
 
-def usage(message: str | None = None, quit: bool = True):
+def usage(message=None, quit=True):
     '''
     Prints a possible message and the program usage, and quits if needed.
     '''
@@ -53,41 +64,37 @@ if __name__ == '__main__':
     # Load the data.
     (ids_train, x_train, y_train), (ids_val, x_val, y_val), (ids_test, x_test) = datasets.load(dataset_name, hot_one_encode=True, split=True)
 
+    # Pre-process the data.
+    if model_name == 'rnn':
+        x_train = x_train.reshape(x_train.shape[:-1])
+        x_test = x_test.reshape(x_test.shape[:-1])
+
     # Define the input shape.
-    if len(x_train.shape) <= 2:
-        usage(f'Dataset \'{dataset_name}\' incompatible: the data must not be 1D.')
-    input_shape = (x_train.shape[1], x_train.shape[2], 1)
+    input_shape = (x_train.shape[1:])
 
     # Summarize the data.
-    print(f'Train data shape: {x_train.shape} and {y_train.shape}.')
-    print(f'Validation data shape: {x_val.shape} and {y_val.shape}.')
-    print(f'Test data shape: {x_test.shape}.')
+    print(f'Dataset: {dataset_name}.')
 
     # Define the model.
     model = models.load(model_name, input_shape)
     print(f'Model: {model_name}.')
 
+    # Define the data augmentation.
     if data_augmentation:
-        # Define the data augmentation.
-        datagen = ImageDataGenerator(
-            featurewise_center=True,
-            featurewise_std_normalization=True,
-            rotation_range=20,
-            width_shift_range=0.2,
-            height_shift_range=0.2,
-            horizontal_flip=True
-        )
+        print(f'Data augmentation activated.')
+        datagen = ImageDataGenerator(preprocessing_function=spec_augment.spec_augment)
         datagen.fit(x_train)
-
-        # Update dataset name.
         dataset_name += '_augmented'
+    
+    # Set up early stopping
+    early_stopping = EarlyStopping(monitor='val_accuracy', patience=20, restore_best_weights=True)
 
     # Train the model.
     start_time = time.time()
     if data_augmentation:
-        hist = model.fit(datagen.flow(x_train, y_train, batch_size=BATCH_SIZE), steps_per_epoch=x_train.shape[0] // 32, epochs=EPOCHS, validation_data=(x_val, y_val))
+        hist = model.fit(datagen.flow(x_train, y_train, batch_size=BATCH_SIZE, shuffle=True), steps_per_epoch=x_train.shape[0] // BATCH_SIZE, epochs=EPOCHS, validation_data=(x_val, y_val), callbacks=[early_stopping])
     else:
-        hist = model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, validation_data=(x_val, y_val))
+        hist = model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, validation_data=(x_val, y_val), shuffle=True, callbacks=[early_stopping])
     training_time = time.time() - start_time
 
     # Evaluate the model.
